@@ -3,15 +3,29 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, Lock, Chrome, Apple, Github, LayoutGrid } from "lucide-react";
 import { useAuth } from "@/providers/AuthContext";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    login(email, pass);
+    setError("");
+    setIsSubmitting(true);
+
+    try {
+      await login(email, pass);
+      router.push("/workspace");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -51,8 +65,9 @@ export default function LoginPage() {
               <a href="#">Forgot Password?</a>
             </div>
             <button className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition">
-              Login
+              {isSubmitting ? "Logging in..." : "Login"}
             </button>
+            {error ? <p className="text-red-500 text-sm">{error}</p> : null}
           </form>
 
           <div className="mt-8 text-center">

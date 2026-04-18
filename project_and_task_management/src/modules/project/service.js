@@ -1,6 +1,7 @@
 const pool = require('../../config/db');
 const ApiError = require('../../utils/apiError');
 const projectRepository = require('./repository');
+const { sendNotification } = require('../../integrations/notificationClient');
 const {
   validateCreateProject,
   validateAddMember,
@@ -23,6 +24,20 @@ const createProject = async (payload) => {
     });
 
     await client.query('COMMIT');
+
+    await sendNotification({
+      event_type: 'PROJECT_CREATED',
+      title: `Project created: ${project.name}`,
+      message: `Project \"${project.name}\" was created by user ${payload.owner_id}`,
+      recipient_ids: [Number(payload.owner_id)],
+      source_service: 'project_and_task_management',
+      source_reference: `project:${project.id}`,
+      metadata: {
+        project_id: project.id,
+        owner_id: Number(payload.owner_id),
+        status: project.status,
+      },
+    });
 
     return project;
   } catch (error) {
@@ -72,6 +87,20 @@ const addMemberToProject = async (projectId, payload) => {
       project_id: Number(projectId),
       user_id: Number(payload.user_id),
       role_in_project: payload.role_in_project || 'developer',
+    });
+
+    await sendNotification({
+      event_type: 'PROJECT_MEMBER_ADDED',
+      title: `Member added to project ${project.name}`,
+      message: `User ${member.user_id} joined project \"${project.name}\" as ${member.role_in_project}`,
+      recipient_ids: [Number(member.user_id), Number(project.owner_id)],
+      source_service: 'project_and_task_management',
+      source_reference: `project:${project.id}`,
+      metadata: {
+        project_id: Number(project.id),
+        member_id: Number(member.user_id),
+        role_in_project: member.role_in_project,
+      },
     });
 
     return member;

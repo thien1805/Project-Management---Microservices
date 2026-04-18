@@ -1,0 +1,114 @@
+services:
+  postgres-auth:
+    image: postgres:16
+    container_name: ms_postgres_auth
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: auth_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_auth_data:/var/lib/postgresql/data
+      - ./auth/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d auth_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-task:
+    image: postgres:16
+    container_name: ms_postgres_task
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: task_management
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_task_data:/var/lib/postgresql/data
+      - ./project_and_task_management/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d task_management"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  auth:
+    build:
+      context: ./auth
+      dockerfile: Dockerfile
+    container_name: ms_auth
+    restart: unless-stopped
+    environment:
+      PORT: 3001
+      DB_HOST: postgres-auth
+      DB_PORT: 5432
+      DB_NAME: auth_db
+      DB_PASSWORD: postgres
+      JWT_SECRET: super_secret_for_local_dev
+      JWT_EXPIRES: 1h
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+    ports:
+      - "3001:3001"
+
+  notification:
+    build:
+      context: ./notification
+      dockerfile: Dockerfile
+    container_name: ms_notification
+    restart: unless-stopped
+    environment:
+      PORT: 3002
+    ports:
+      - "3002:3002"
+
+  project-and-task-management:
+    build:
+      context: ./project_and_task_management
+      dockerfile: Dockerfile
+    container_name: ms_project_task
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      DB_HOST: postgres-task
+      DB_PORT: 5432
+      DB_NAME: task_management
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      NOTIFICATION_ENABLED: "true"
+      NOTIFICATION_URL: http://notification:3002/api/notifications
+    depends_on:
+      postgres-task:
+        condition: service_healthy
+      notification:
+        condition: service_started
+    ports:
+      - "3010:3000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ms_frontend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_AUTH_SERVICE_URL: http://localhost:3001
+      NEXT_PUBLIC_TASK_SERVICE_URL: http://localhost:3010
+    depends_on:
+      auth:
+        condition: service_started
+      project-and-task-management:
+        condition: service_started
+    ports:
+      - "3003:3003"
+
+volumes:
+  postgres_auth_data:
+  postgres_task_data:

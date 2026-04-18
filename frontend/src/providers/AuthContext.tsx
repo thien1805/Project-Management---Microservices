@@ -1,26 +1,61 @@
 "use client";
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { getProfile, loginWithEmail, AuthUser } from "@/lib/api";
 
 interface AuthContextType {
-  user: any;
-  login: (email: string, pass: string) => void;
+  user: AuthUser | null;
+  token: string | null;
+  isLoading: boolean;
+  login: (email: string, pass: string) => Promise<void>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = (email: string, pass: string) => {
-    console.log("🚀 EasyWork Auth Service:", { email, pass });
-    setUser({ email, role: "admin" }); // Giả lập login thành công
+  useEffect(() => {
+    const bootstrap = async () => {
+      const storedToken = localStorage.getItem("access_token");
+      if (!storedToken) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const profile = await getProfile(storedToken);
+        setToken(storedToken);
+        setUser(profile);
+      } catch {
+        localStorage.removeItem("access_token");
+        setToken(null);
+        setUser(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    bootstrap();
+  }, []);
+
+  const login = async (email: string, pass: string) => {
+    const data = await loginWithEmail(email, pass);
+    localStorage.setItem("access_token", data.access_token);
+    setToken(data.access_token);
+    setUser(data.user);
   };
 
-  const logout = () => setUser(null);
+  const logout = () => {
+    localStorage.removeItem("access_token");
+    setToken(null);
+    setUser(null);
+  };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

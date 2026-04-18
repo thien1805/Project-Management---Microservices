@@ -1,6 +1,7 @@
 const ApiError = require('../../utils/apiError');
 const taskRepo = require('./repository');
 const projectRepo = require('../project/repository');
+const { sendNotification } = require('../../integrations/notificationClient');
 
 const VALID_STATUS = ['todo', 'in_progress', 'done'];
 const VALID_PRIORITY = ['low', 'medium', 'high'];
@@ -51,6 +52,26 @@ const createTask = async (body) => {
     new_value: JSON.stringify(task),
   });
 
+  const recipients = [Number(created_by)];
+  if (task.assignee_id) {
+    recipients.push(Number(task.assignee_id));
+  }
+
+  await sendNotification({
+    event_type: 'TASK_CREATED',
+    title: `Task created: ${task.title}`,
+    message: `Task \"${task.title}\" was created in project ${task.project_id}`,
+    recipient_ids: [...new Set(recipients)],
+    source_service: 'project_and_task_management',
+    source_reference: `task:${task.id}`,
+    metadata: {
+      task_id: task.id,
+      project_id: task.project_id,
+      status: task.status,
+      priority: task.priority,
+    },
+  });
+
   return task;
 };
 
@@ -92,6 +113,26 @@ const updateTask = async (id, body) => {
     new_value: JSON.stringify(updatedTask),
   });
 
+  const recipients = [Number(body.actor_id || oldTask.created_by)];
+  if (updatedTask.assignee_id) {
+    recipients.push(Number(updatedTask.assignee_id));
+  }
+
+  await sendNotification({
+    event_type: 'TASK_UPDATED',
+    title: `Task updated: ${updatedTask.title}`,
+    message: `Task \"${updatedTask.title}\" was updated`,
+    recipient_ids: [...new Set(recipients)],
+    source_service: 'project_and_task_management',
+    source_reference: `task:${updatedTask.id}`,
+    metadata: {
+      task_id: updatedTask.id,
+      project_id: updatedTask.project_id,
+      old_status: oldTask.status,
+      new_status: updatedTask.status,
+    },
+  });
+
   return updatedTask;
 };
 
@@ -114,6 +155,26 @@ const updateTaskStatus = async (id, body) => {
     action_type: 'TASK_STATUS_CHANGED',
     old_value: oldTask.status,
     new_value: updatedTask.status,
+  });
+
+  const recipients = [Number(actor_id || oldTask.created_by)];
+  if (oldTask.assignee_id) {
+    recipients.push(Number(oldTask.assignee_id));
+  }
+
+  await sendNotification({
+    event_type: 'TASK_STATUS_CHANGED',
+    title: `Task status changed: ${updatedTask.title}`,
+    message: `Task \"${updatedTask.title}\" changed from ${oldTask.status} to ${updatedTask.status}`,
+    recipient_ids: [...new Set(recipients)],
+    source_service: 'project_and_task_management',
+    source_reference: `task:${updatedTask.id}`,
+    metadata: {
+      task_id: updatedTask.id,
+      project_id: updatedTask.project_id,
+      old_status: oldTask.status,
+      new_status: updatedTask.status,
+    },
   });
 
   return updatedTask;
