@@ -1,0 +1,115 @@
+@import url('https://fonts.googleapis.com/css2?family=Michroma&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.react-calendar{
+  width: 100% !important;
+  border: none !important;
+  font: "Inter", sans-serif !important;
+}
+.react-calendar__navigation__label__labelText{
+  font-weight: 600 !important;
+}
+.react-calendar__tile--active {
+    background: #C3EBFA !important;
+    color: black !important;
+}
+
+/* BigCalendar component overide style */
+.rbc-btn-group:first-child{
+  display: none !important;
+}
+.rbc-toolbar-label{
+  text-align: right !important;
+}
+.rbc-btn-group{
+  font-size: 13px !important;
+}
+.rbc-btn-group button{
+  border: none !important;
+  background-color: #f1f0ff !important;
+  margin-left: 2px !important;
+}
+.rbc-toolbar button.rbc-active{
+  background-color: #dbdafe !important;
+  box-shadow: none !important;
+}
+.rbc-time-view{
+  border-color: #eee !important; 
+  border-radius: 15px;
+  background-color: #fff;
+}
+.rbc-time-header{
+  display: none !important;
+}
+.rbc-time-content{
+  border: none !important;
+}
+.rbc-time-slot{
+  font-size: 14px !important;
+  padding: 0 15px !important;
+}
+.rbc-event{
+  border-radius: 10px !important;
+  border: none !important;
+  width: fit-content !important;
+  font-size: 14px;
+  color: black !important;
+  transition: all 0.4s ease-in-out;
+  max-width: 180px !important;
+  width: fit-content !important;
+  flex-wrap: wrap;
+}
+.rbc-event:hover{
+  transform: scale(1.04);
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+  filter: brightness(1.05);
+}
+.rbc-event:nth-child(1){
+  background-color: #ffaecc !important;
+}
+.rbc-event:nth-child(2){
+  background-color: #E9F5FF !important;
+}
+.rbc-event:nth-child(3){
+  background-color: #CCFFE2 !important;
+}
+.rbc-event:nth-child(4){
+  background-color: #82AAF2 !important;
+}
+.rbc-event:nth-child(5){
+  background-color: #0080F9 !important;
+}
+.rbc-event:nth-child(6){
+  background-color: #cbfbfd !important;
+}
+.rbc-event-label{
+  margin: 3px 0;
+}
+
+.rbc-event-content{
+  font-weight: 500 !important;
+  font-size: 15px;
+  display: block;
+}
+@media (max-width: 1285px) {
+  .rbc-event-content {
+    display: none !important;
+  }
+}
+.rbc-timeslot-group{
+  background-color: white !important;
+}
+
+/* NOTIFICATION ANIMATION  */
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
