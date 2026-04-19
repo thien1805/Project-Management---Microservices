@@ -6,8 +6,8 @@ import { AuthProvider } from "@/providers/AuthContext";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Vera CRM",
-  description: "CRM System",
+  title: "Project Management System",
+  description: "Project Management System",
 };
 
 export default function RootLayout({
