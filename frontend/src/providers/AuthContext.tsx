@@ -1,12 +1,13 @@
 "use client";
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { getProfile, loginWithEmail, AuthUser } from "@/lib/api";
+import { getProfile, loginWithEmail, registerWithEmail, AuthUser } from "@/lib/api";
 
 interface AuthContextType {
   user: AuthUser | null;
   token: string | null;
   isLoading: boolean;
   login: (email: string, pass: string) => Promise<void>;
+  signup: (fullName: string, email: string, pass: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -48,6 +49,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(data.user);
   };
 
+  const signup = async (fullName: string, email: string, pass: string) => {
+    await registerWithEmail({
+      full_name: fullName,
+      email,
+      password: pass,
+    });
+
+    await login(email, pass);
+  };
+
   const logout = () => {
     localStorage.removeItem("access_token");
     setToken(null);
@@ -55,7 +66,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, signup, logout }}>
       {children}
     </AuthContext.Provider>
   );

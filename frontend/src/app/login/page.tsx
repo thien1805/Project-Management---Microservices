@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Mail, Lock, Chrome, Apple, Github, LayoutGrid } from "lucide-react";
 import { useAuth } from "@/providers/AuthContext";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -71,6 +72,12 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-8 text-center">
+            <p className="text-sm text-gray-500 mb-4">
+              Chua co tai khoan?{" "}
+              <Link href="/signup" className="text-blue-600 font-semibold">
+                Sign up ngay
+              </Link>
+            </p>
             <p className="text-xs text-gray-400 mb-4 uppercase tracking-widest">Or login with</p>
             <div className="flex justify-center gap-4">
                {[Chrome, Apple, Github].map((Icon, i) => (

@@ -67,6 +67,32 @@ const getProjectById = async (id) => {
   return project;
 };
 
+const deleteProject = async (id, payload = {}) => {
+  const project = await projectRepository.getProjectById(id);
+  if (!project) {
+    throw new ApiError(404, 'Project not found');
+  }
+
+  const deletedProject = await projectRepository.deleteProject(id);
+
+  const actorId = Number(payload.actor_id || project.owner_id);
+  await sendNotification({
+    event_type: 'PROJECT_DELETED',
+    title: `Project deleted: ${project.name}`,
+    message: `Project \"${project.name}\" was deleted`,
+    recipient_ids: [...new Set([Number(project.owner_id), actorId])],
+    source_service: 'project_and_task_management',
+    source_reference: `project:${project.id}`,
+    metadata: {
+      project_id: project.id,
+      actor_id: actorId,
+      status: 'deleted',
+    },
+  });
+
+  return deletedProject;
+};
+
 const addMemberToProject = async (projectId, payload) => {
   validateAddMember(payload);
 
@@ -127,6 +153,7 @@ module.exports = {
   createProject,
   getProjects,
   getProjectById,
+  deleteProject,
   addMemberToProject,
   getProjectMembers,
 };

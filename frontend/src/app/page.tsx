@@ -26,7 +26,7 @@ export default function LandingPage() {
         </div>
         <div className="flex items-center gap-4">
           <button className="text-sm font-medium">Request demo</button>
-          <button onClick={() => router.push("/login")} className="bg-white px-5 py-2 rounded-full text-sm font-bold shadow-sm">Sign Up</button>
+          <button onClick={() => router.push("/signup")} className="bg-white px-5 py-2 rounded-full text-sm font-bold shadow-sm">Sign Up</button>
         </div>
       </nav>
 
@@ -49,6 +49,7 @@ export default function LandingPage() {
           We will help you better organize your time, so you can focus on what matters to you.
         </p>
         <motion.button 
+          onClick={() => router.push("/signup")}
           whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
           className="bg-black text-white px-8 py-4 rounded-full font-bold text-lg shadow-xl"
         >

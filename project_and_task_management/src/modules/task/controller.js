@@ -37,6 +37,15 @@ const updateTaskStatus = async (req, res, next) => {
   }
 };
 
+const deleteTask = async (req, res, next) => {
+  try {
+    const data = await service.deleteTask(Number(req.params.id), req.body || {});
+    return successResponse(res, 200, 'Task deleted successfully', data);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getTasksByProjectId = async (req, res, next) => {
   try {
     const data = await service.getTasksByProjectId(Number(req.params.id));
@@ -51,5 +60,6 @@ module.exports = {
   getTaskById,
   updateTask,
   updateTaskStatus,
+  deleteTask,
   getTasksByProjectId,
 };

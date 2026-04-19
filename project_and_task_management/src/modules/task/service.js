@@ -60,13 +60,14 @@ const createTask = async (body) => {
   await sendNotification({
     event_type: 'TASK_CREATED',
     title: `Task created: ${task.title}`,
-    message: `Task \"${task.title}\" was created in project ${task.project_id}`,
+    message: `Task \"${task.title}\" was created in project \"${project.name}\"`,
     recipient_ids: [...new Set(recipients)],
     source_service: 'project_and_task_management',
     source_reference: `task:${task.id}`,
     metadata: {
       task_id: task.id,
       project_id: task.project_id,
+      project_name: project.name,
       status: task.status,
       priority: task.priority,
     },
@@ -84,6 +85,9 @@ const getTaskById = async (id) => {
 const updateTask = async (id, body) => {
   const oldTask = await taskRepo.getTaskById(id);
   if (!oldTask) throw new ApiError(404, 'Task not found');
+
+  const project = await projectRepo.getProjectById(oldTask.project_id);
+  const projectName = project?.name || `#${oldTask.project_id}`;
 
   const status = body.status || oldTask.status;
   const priority = body.priority || oldTask.priority;
@@ -121,13 +125,14 @@ const updateTask = async (id, body) => {
   await sendNotification({
     event_type: 'TASK_UPDATED',
     title: `Task updated: ${updatedTask.title}`,
-    message: `Task \"${updatedTask.title}\" was updated`,
+    message: `Task \"${updatedTask.title}\" was updated in project \"${projectName}\"`,
     recipient_ids: [...new Set(recipients)],
     source_service: 'project_and_task_management',
     source_reference: `task:${updatedTask.id}`,
     metadata: {
       task_id: updatedTask.id,
       project_id: updatedTask.project_id,
+      project_name: projectName,
       old_status: oldTask.status,
       new_status: updatedTask.status,
     },
@@ -147,6 +152,9 @@ const updateTaskStatus = async (id, body) => {
   const oldTask = await taskRepo.getTaskById(id);
   if (!oldTask) throw new ApiError(404, 'Task not found');
 
+  const project = await projectRepo.getProjectById(oldTask.project_id);
+  const projectName = project?.name || `#${oldTask.project_id}`;
+
   const updatedTask = await taskRepo.updateTaskStatus(id, status);
 
   await taskRepo.createActivityLog({
@@ -165,13 +173,14 @@ const updateTaskStatus = async (id, body) => {
   await sendNotification({
     event_type: 'TASK_STATUS_CHANGED',
     title: `Task status changed: ${updatedTask.title}`,
-    message: `Task \"${updatedTask.title}\" changed from ${oldTask.status} to ${updatedTask.status}`,
+    message: `Task \"${updatedTask.title}\" in project \"${projectName}\" changed from ${oldTask.status} to ${updatedTask.status}`,
     recipient_ids: [...new Set(recipients)],
     source_service: 'project_and_task_management',
     source_reference: `task:${updatedTask.id}`,
     metadata: {
       task_id: updatedTask.id,
       project_id: updatedTask.project_id,
+      project_name: projectName,
       old_status: oldTask.status,
       new_status: updatedTask.status,
     },
@@ -187,10 +196,53 @@ const getTasksByProjectId = async (projectId) => {
   return await taskRepo.getTasksByProjectId(projectId);
 };
 
+const deleteTask = async (id, payload = {}) => {
+  const existingTask = await taskRepo.getTaskById(id);
+  if (!existingTask) throw new ApiError(404, 'Task not found');
+
+  const project = await projectRepo.getProjectById(existingTask.project_id);
+  const projectName = project?.name || `#${existingTask.project_id}`;
+
+  const actorId = Number(payload.actor_id || existingTask.created_by);
+  await taskRepo.createActivityLog({
+    task_id: id,
+    actor_id: actorId,
+    action_type: 'TASK_DELETED',
+    old_value: JSON.stringify(existingTask),
+    new_value: null,
+  });
+
+  const deletedTask = await taskRepo.deleteTask(id);
+
+  const recipients = [Number(existingTask.created_by), actorId];
+  if (existingTask.assignee_id) {
+    recipients.push(Number(existingTask.assignee_id));
+  }
+
+  await sendNotification({
+    event_type: 'TASK_DELETED',
+    title: `Task deleted: ${existingTask.title}`,
+    message: `Task \"${existingTask.title}\" was deleted from project \"${projectName}\"`,
+    recipient_ids: [...new Set(recipients)],
+    source_service: 'project_and_task_management',
+    source_reference: `task:${existingTask.id}`,
+    metadata: {
+      task_id: existingTask.id,
+      project_id: existingTask.project_id,
+      project_name: projectName,
+      actor_id: actorId,
+      status: 'deleted',
+    },
+  });
+
+  return deletedTask;
+};
+
 module.exports = {
   createTask,
   getTaskById,
   updateTask,
   updateTaskStatus,
+  deleteTask,
   getTasksByProjectId,
 };

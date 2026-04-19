@@ -28,6 +28,15 @@ const getProjectById = async (req, res, next) => {
   }
 };
 
+const deleteProject = async (req, res, next) => {
+  try {
+    const data = await projectService.deleteProject(Number(req.params.id), req.body || {});
+    return successResponse(res, 200, 'Project deleted successfully', data);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const addMemberToProject = async (req, res, next) => {
   try {
     const member = await projectService.addMemberToProject(Number(req.params.id), req.body);
@@ -50,6 +59,7 @@ module.exports = {
   createProject,
   getProjects,
   getProjectById,
+  deleteProject,
   addMemberToProject,
   getProjectMembers,
 };

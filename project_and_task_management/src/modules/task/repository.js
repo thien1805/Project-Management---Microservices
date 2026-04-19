@@ -73,6 +73,18 @@ const updateTaskStatus = async (id, status) => {
   return result.rows[0] || null;
 };
 
+const deleteTask = async (id) => {
+  const result = await pool.query(
+    `
+    DELETE FROM task.tasks
+    WHERE id = $1
+    RETURNING *
+    `,
+    [id]
+  );
+  return result.rows[0] || null;
+};
+
 const getTasksByProjectId = async (projectId) => {
   const result = await pool.query(
     `
@@ -101,6 +113,7 @@ module.exports = {
   getTaskById,
   updateTask,
   updateTaskStatus,
+  deleteTask,
   getTasksByProjectId,
   createActivityLog,
 };

@@ -20,6 +20,8 @@ Chi `project_and_task_management` gui thong bao den `notification` theo yeu cau:
 - Tao task (`TASK_CREATED`)
 - Cap nhat task (`TASK_UPDATED`)
 - Doi trang thai task (`TASK_STATUS_CHANGED`)
+- Xoa task (`TASK_DELETED`)
+- Xoa project (`PROJECT_DELETED`)
 
 Neu `notification` bi loi, API nghiep vu van tra ket qua thanh cong (non-blocking) va ghi log loi ra console.
 
@@ -41,6 +43,7 @@ Tat ca endpoint duoi day da co san trong code.
 - `POST /api/projects`
 - `GET /api/projects`
 - `GET /api/projects/:id`
+- `DELETE /api/projects/:id`
 - `POST /api/projects/:id/members`
 - `GET /api/projects/:id/members`
 - `GET /api/projects/:id/tasks`
@@ -48,6 +51,7 @@ Tat ca endpoint duoi day da co san trong code.
 - `GET /api/tasks/:id`
 - `PUT /api/tasks/:id`
 - `PATCH /api/tasks/:id/status`
+- `DELETE /api/tasks/:id`
 
 ### 2.3 Notification service (`http://localhost:3002`)
 
@@ -88,6 +92,7 @@ Ho tro filter:
 
 - Landing page: `/`
 - Login page: `/login`
+- Sign up page: `/signup`
 - Workspace page: `/workspace`
 
 ### 3.2 Tinh trang truoc khi tich hop
@@ -102,14 +107,27 @@ Da tich hop frontend voi cac service:
 
 - `auth`
   - Login that qua `POST /api/auth/login`
+  - Sign up qua `POST /api/auth/register`
   - Luu `access_token` trong localStorage
   - Lay profile qua `GET /api/auth/profile`
   - Logout xoa token
 - `project_and_task_management`
   - Lay danh sach project qua `GET /api/projects`
   - Tao project qua `POST /api/projects`
+  - Xoa project qua `DELETE /api/projects/:id`
   - Lay task theo project qua `GET /api/projects/:id/tasks`
   - Tao task qua `POST /api/tasks`
+  - Doi trang thai task qua `PATCH /api/tasks/:id/status`
+  - Xoa task qua `DELETE /api/tasks/:id`
+
+### 3.4 Chuc nang giao dien da hoan thanh
+
+- Sign up va login that voi auth service
+- Man hinh workspace theo tung project
+- CRUD co ban cho project/task: tao, xoa
+- Toggle task hoan thanh/chua hoan thanh
+- Tab Notifications de xem event thong bao
+- Toast thong bao goc phai man hinh cho moi hanh dong
 
 Notification khong can frontend goi truc tiep, vi da duoc trigger noi bo tu `project_and_task_management`.
 
@@ -119,6 +137,7 @@ Frontend dung cac bien public sau:
 
 - `NEXT_PUBLIC_AUTH_SERVICE_URL` (mac dinh: `http://localhost:3001`)
 - `NEXT_PUBLIC_TASK_SERVICE_URL` (mac dinh: `http://localhost:3000`)
+- `NEXT_PUBLIC_NOTIFICATION_SERVICE_URL` (mac dinh: `http://localhost:3002`)
 
 Trong docker-compose da map san 2 bien nay cho container frontend.
 
@@ -242,6 +261,7 @@ Sau do login tren trang `/login` va vao `/workspace` de test tao project/task.
 
 - `NEXT_PUBLIC_AUTH_SERVICE_URL` (compose: `http://localhost:3001`)
 - `NEXT_PUBLIC_TASK_SERVICE_URL` (compose: `http://localhost:3010`)
+- `NEXT_PUBLIC_NOTIFICATION_SERVICE_URL` (compose: `http://localhost:3002`)
 
 ### Notification
 
