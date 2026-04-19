@@ -12,7 +12,7 @@ const createProject = async (req, res, next) => {
 
 const getProjects = async (req, res, next) => {
   try {
-    const projects = await projectService.getProjects();
+    const projects = await projectService.getProjects(req.query.owner_id);
     return successResponse(res, 200, 'Projects retrieved successfully', projects);
   } catch (error) {
     next(error);
@@ -21,7 +21,7 @@ const getProjects = async (req, res, next) => {
 
 const getProjectById = async (req, res, next) => {
   try {
-    const project = await projectService.getProjectById(Number(req.params.id));
+    const project = await projectService.getProjectById(Number(req.params.id), req.query.requester_id);
     return successResponse(res, 200, 'Project retrieved successfully', project);
   } catch (error) {
     next(error);
@@ -39,7 +39,7 @@ const deleteProject = async (req, res, next) => {
 
 const addMemberToProject = async (req, res, next) => {
   try {
-    const member = await projectService.addMemberToProject(Number(req.params.id), req.body);
+    const member = await projectService.addMemberToProject(Number(req.params.id), req.body || {});
     return successResponse(res, 201, 'Member added successfully', member);
   } catch (error) {
     next(error);
@@ -48,7 +48,7 @@ const addMemberToProject = async (req, res, next) => {
 
 const getProjectMembers = async (req, res, next) => {
   try {
-    const members = await projectService.getProjectMembers(Number(req.params.id));
+    const members = await projectService.getProjectMembers(Number(req.params.id), req.query.requester_id);
     return successResponse(res, 200, 'Project members retrieved successfully', members);
   } catch (error) {
     next(error);

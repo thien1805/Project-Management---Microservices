@@ -6,6 +6,32 @@ const { sendNotification } = require('../../integrations/notificationClient');
 const VALID_STATUS = ['todo', 'in_progress', 'done'];
 const VALID_PRIORITY = ['low', 'medium', 'high'];
 
+const parsePositiveInt = (value, fieldName) => {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new ApiError(400, `${fieldName} must be a positive integer`);
+  }
+  return parsed;
+};
+
+const assertProjectOwner = async (projectId, requesterId) => {
+  const project = await projectRepo.getProjectById(projectId);
+  if (!project) {
+    throw new ApiError(404, 'Project not found');
+  }
+
+  if (Number(project.owner_id) !== requesterId) {
+    throw new ApiError(403, 'Access denied: project does not belong to this user');
+  }
+
+  return project;
+};
+
+const assertTaskOwner = async (task, requesterId) => {
+  const project = await assertProjectOwner(Number(task.project_id), requesterId);
+  return project;
+};
+
 const createTask = async (body) => {
   const {
     project_id,
@@ -22,8 +48,8 @@ const createTask = async (body) => {
   if (!title) throw new ApiError(400, 'title is required');
   if (!created_by) throw new ApiError(400, 'created_by is required');
 
-  const project = await projectRepo.getProjectById(Number(project_id));
-  if (!project) throw new ApiError(404, 'Project not found');
+  const creatorId = parsePositiveInt(created_by, 'created_by');
+  const project = await assertProjectOwner(Number(project_id), creatorId);
 
   if (status && !VALID_STATUS.includes(status)) {
     throw new ApiError(400, 'Invalid task status');
@@ -41,18 +67,18 @@ const createTask = async (body) => {
     status,
     priority,
     due_date,
-    created_by: Number(created_by),
+    created_by: creatorId,
   });
 
   await taskRepo.createActivityLog({
     task_id: task.id,
-    actor_id: Number(created_by),
+    actor_id: creatorId,
     action_type: 'TASK_CREATED',
     old_value: null,
     new_value: JSON.stringify(task),
   });
 
-  const recipients = [Number(created_by)];
+  const recipients = [creatorId];
   if (task.assignee_id) {
     recipients.push(Number(task.assignee_id));
   }
@@ -76,17 +102,22 @@ const createTask = async (body) => {
   return task;
 };
 
-const getTaskById = async (id) => {
+const getTaskById = async (id, requesterId) => {
+  const parsedRequesterId = parsePositiveInt(requesterId, 'requester_id');
   const task = await taskRepo.getTaskById(id);
   if (!task) throw new ApiError(404, 'Task not found');
+
+  await assertTaskOwner(task, parsedRequesterId);
   return task;
 };
 
 const updateTask = async (id, body) => {
+  const actorId = parsePositiveInt(body.actor_id, 'actor_id');
   const oldTask = await taskRepo.getTaskById(id);
   if (!oldTask) throw new ApiError(404, 'Task not found');
 
-  const project = await projectRepo.getProjectById(oldTask.project_id);
+  const project = await assertTaskOwner(oldTask, actorId);
+
   const projectName = project?.name || `#${oldTask.project_id}`;
 
   const status = body.status || oldTask.status;
@@ -111,13 +142,13 @@ const updateTask = async (id, body) => {
 
   await taskRepo.createActivityLog({
     task_id: id,
-    actor_id: Number(body.actor_id || oldTask.created_by),
+    actor_id: actorId,
     action_type: 'TASK_UPDATED',
     old_value: JSON.stringify(oldTask),
     new_value: JSON.stringify(updatedTask),
   });
 
-  const recipients = [Number(body.actor_id || oldTask.created_by)];
+  const recipients = [actorId];
   if (updatedTask.assignee_id) {
     recipients.push(Number(updatedTask.assignee_id));
   }
@@ -145,6 +176,7 @@ const updateTaskStatus = async (id, body) => {
   const { status, actor_id } = body;
 
   if (!status) throw new ApiError(400, 'status is required');
+  const actorId = parsePositiveInt(actor_id, 'actor_id');
   if (!VALID_STATUS.includes(status)) {
     throw new ApiError(400, 'Invalid task status');
   }
@@ -152,20 +184,20 @@ const updateTaskStatus = async (id, body) => {
   const oldTask = await taskRepo.getTaskById(id);
   if (!oldTask) throw new ApiError(404, 'Task not found');
 
-  const project = await projectRepo.getProjectById(oldTask.project_id);
+  const project = await assertTaskOwner(oldTask, actorId);
   const projectName = project?.name || `#${oldTask.project_id}`;
 
   const updatedTask = await taskRepo.updateTaskStatus(id, status);
 
   await taskRepo.createActivityLog({
     task_id: id,
-    actor_id: Number(actor_id || oldTask.created_by),
+    actor_id: actorId,
     action_type: 'TASK_STATUS_CHANGED',
     old_value: oldTask.status,
     new_value: updatedTask.status,
   });
 
-  const recipients = [Number(actor_id || oldTask.created_by)];
+  const recipients = [actorId];
   if (oldTask.assignee_id) {
     recipients.push(Number(oldTask.assignee_id));
   }
@@ -189,21 +221,21 @@ const updateTaskStatus = async (id, body) => {
   return updatedTask;
 };
 
-const getTasksByProjectId = async (projectId) => {
-  const project = await projectRepo.getProjectById(projectId);
-  if (!project) throw new ApiError(404, 'Project not found');
+const getTasksByProjectId = async (projectId, requesterId) => {
+  const parsedRequesterId = parsePositiveInt(requesterId, 'requester_id');
+  await assertProjectOwner(projectId, parsedRequesterId);
 
   return await taskRepo.getTasksByProjectId(projectId);
 };
 
 const deleteTask = async (id, payload = {}) => {
+  const actorId = parsePositiveInt(payload.actor_id, 'actor_id');
   const existingTask = await taskRepo.getTaskById(id);
   if (!existingTask) throw new ApiError(404, 'Task not found');
 
-  const project = await projectRepo.getProjectById(existingTask.project_id);
+  const project = await assertTaskOwner(existingTask, actorId);
   const projectName = project?.name || `#${existingTask.project_id}`;
 
-  const actorId = Number(payload.actor_id || existingTask.created_by);
   await taskRepo.createActivityLog({
     task_id: id,
     actor_id: actorId,

@@ -12,7 +12,7 @@ const createTask = async (req, res, next) => {
 
 const getTaskById = async (req, res, next) => {
   try {
-    const data = await service.getTaskById(Number(req.params.id));
+    const data = await service.getTaskById(Number(req.params.id), req.query.requester_id);
     return successResponse(res, 200, 'Task retrieved successfully', data);
   } catch (error) {
     next(error);
@@ -48,7 +48,7 @@ const deleteTask = async (req, res, next) => {
 
 const getTasksByProjectId = async (req, res, next) => {
   try {
-    const data = await service.getTasksByProjectId(Number(req.params.id));
+    const data = await service.getTasksByProjectId(Number(req.params.id), req.query.requester_id);
     return successResponse(res, 200, 'Project tasks retrieved successfully', data);
   } catch (error) {
     next(error);

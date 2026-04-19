@@ -22,13 +22,19 @@ const addProjectMember = async (client, { project_id, user_id, role_in_project =
   return result.rows[0];
 };
 
-const getProjects = async () => {
-  const query = `
+const getProjects = async (ownerId) => {
+  const baseQuery = `
     SELECT *
     FROM task.projects
-    ORDER BY id DESC
   `;
-  const result = await pool.query(query);
+
+  const hasOwnerFilter = ownerId !== undefined;
+  const query = hasOwnerFilter
+    ? `${baseQuery} WHERE owner_id = $1 ORDER BY id DESC`
+    : `${baseQuery} ORDER BY id DESC`;
+  const params = hasOwnerFilter ? [ownerId] : [];
+
+  const result = await pool.query(query, params);
   return result.rows;
 };
 
@@ -89,6 +95,22 @@ const getProjectSummaryById = async (projectId) => {
   return result.rows[0] || null;
 };
 
+const getProjectSummaryByIdForOwner = async (projectId, ownerId) => {
+  const query = `
+    SELECT
+      p.*,
+      COUNT(DISTINCT pm.id)::int AS member_count,
+      COUNT(DISTINCT t.id)::int AS task_count
+    FROM task.projects p
+    LEFT JOIN task.project_members pm ON pm.project_id = p.id
+    LEFT JOIN task.tasks t ON t.project_id = p.id
+    WHERE p.id = $1 AND p.owner_id = $2
+    GROUP BY p.id
+  `;
+  const result = await pool.query(query, [projectId, ownerId]);
+  return result.rows[0] || null;
+};
+
 module.exports = {
   createProject,
   addProjectMember,
@@ -98,4 +120,5 @@ module.exports = {
   getProjectMembers,
   checkMemberExists,
   getProjectSummaryById,
+  getProjectSummaryByIdForOwner,
 };

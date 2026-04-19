@@ -7,6 +7,27 @@ const {
   validateAddMember,
 } = require('./validation');
 
+const parsePositiveInt = (value, fieldName) => {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new ApiError(400, `${fieldName} must be a positive integer`);
+  }
+  return parsed;
+};
+
+const assertProjectOwner = async (projectId, requesterId) => {
+  const project = await projectRepository.getProjectById(projectId);
+  if (!project) {
+    throw new ApiError(404, 'Project not found');
+  }
+
+  if (Number(project.owner_id) !== requesterId) {
+    throw new ApiError(403, 'Access denied: project does not belong to this user');
+  }
+
+  return project;
+};
+
 const createProject = async (payload) => {
   validateCreateProject(payload);
 
@@ -53,12 +74,19 @@ const createProject = async (payload) => {
   }
 };
 
-const getProjects = async () => {
-  return await projectRepository.getProjects();
+const getProjects = async (ownerId) => {
+  if (ownerId === undefined) {
+    throw new ApiError(400, 'owner_id is required');
+  }
+
+  const parsedOwnerId = parsePositiveInt(ownerId, 'owner_id');
+
+  return await projectRepository.getProjects(parsedOwnerId);
 };
 
-const getProjectById = async (id) => {
-  const project = await projectRepository.getProjectSummaryById(id);
+const getProjectById = async (id, requesterId) => {
+  const parsedRequesterId = parsePositiveInt(requesterId, 'requester_id');
+  const project = await projectRepository.getProjectSummaryByIdForOwner(id, parsedRequesterId);
 
   if (!project) {
     throw new ApiError(404, 'Project not found');
@@ -68,14 +96,11 @@ const getProjectById = async (id) => {
 };
 
 const deleteProject = async (id, payload = {}) => {
-  const project = await projectRepository.getProjectById(id);
-  if (!project) {
-    throw new ApiError(404, 'Project not found');
-  }
+  const actorId = parsePositiveInt(payload.actor_id, 'actor_id');
+  const project = await assertProjectOwner(id, actorId);
 
   const deletedProject = await projectRepository.deleteProject(id);
 
-  const actorId = Number(payload.actor_id || project.owner_id);
   await sendNotification({
     event_type: 'PROJECT_DELETED',
     title: `Project deleted: ${project.name}`,
@@ -96,10 +121,10 @@ const deleteProject = async (id, payload = {}) => {
 const addMemberToProject = async (projectId, payload) => {
   validateAddMember(payload);
 
-  const project = await projectRepository.getProjectById(projectId);
-  if (!project) {
-    throw new ApiError(404, 'Project not found');
-  }
+  const requesterId = parsePositiveInt(payload.requester_id, 'requester_id');
+
+  const project = await assertProjectOwner(projectId, requesterId);
+
 
   const exists = await projectRepository.checkMemberExists(projectId, Number(payload.user_id));
   if (exists) {
@@ -140,11 +165,9 @@ const addMemberToProject = async (projectId, payload) => {
   }
 };
 
-const getProjectMembers = async (projectId) => {
-  const project = await projectRepository.getProjectById(projectId);
-  if (!project) {
-    throw new ApiError(404, 'Project not found');
-  }
+const getProjectMembers = async (projectId, requesterId) => {
+  const parsedRequesterId = parsePositiveInt(requesterId, 'requester_id');
+  await assertProjectOwner(projectId, parsedRequesterId);
 
   return await projectRepository.getProjectMembers(projectId);
 };

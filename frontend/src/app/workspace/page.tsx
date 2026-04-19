@@ -70,10 +70,17 @@ export default function WorkspacePage() {
   const isTaskNotFoundError = (message: string) => /task not found/i.test(message);
 
   const loadProjects = useCallback(async () => {
+    if (!user) {
+      setProjects([]);
+      setSelectedProjectId(null);
+      setWorkspaceView("projects");
+      return;
+    }
+
     setLoadingProjects(true);
     setError("");
     try {
-      const data = await getProjects();
+      const data = await getProjects(user.id);
       setProjects(data);
 
       if (data.length === 0) {
@@ -89,14 +96,19 @@ export default function WorkspacePage() {
     } finally {
       setLoadingProjects(false);
     }
-  }, [notify, selectedProjectId]);
+  }, [notify, selectedProjectId, user]);
 
   const loadTasks = useCallback(
     async (projectId: number) => {
+      if (!user) {
+        setTasks([]);
+        return;
+      }
+
       setLoadingTasks(true);
       setError("");
       try {
-        const data = await getTasksByProjectId(projectId);
+        const data = await getTasksByProjectId(projectId, user.id);
         setTasks(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load tasks");
@@ -106,7 +118,7 @@ export default function WorkspacePage() {
         setLoadingTasks(false);
       }
     },
-    [notify]
+    [notify, user]
   );
 
   const loadNotifications = useCallback(async () => {

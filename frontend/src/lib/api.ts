@@ -135,8 +135,10 @@ export const getProfile = async (token: string) => {
   return body.data;
 };
 
-export const getProjects = async () => {
-  const response = await fetch(`${getTaskServiceUrl()}/api/projects`, {
+export const getProjects = async (ownerId: number) => {
+  const query = `?owner_id=${encodeURIComponent(String(ownerId))}`;
+
+  const response = await fetch(`${getTaskServiceUrl()}/api/projects${query}`, {
     method: "GET",
   });
 
@@ -182,10 +184,13 @@ export const deleteProject = async (projectId: number, actorId?: number) => {
   return body.data;
 };
 
-export const getTasksByProjectId = async (projectId: number) => {
-  const response = await fetch(`${getTaskServiceUrl()}/api/projects/${projectId}/tasks`, {
+export const getTasksByProjectId = async (projectId: number, requesterId: number) => {
+  const response = await fetch(
+    `${getTaskServiceUrl()}/api/projects/${projectId}/tasks?requester_id=${encodeURIComponent(String(requesterId))}`,
+    {
     method: "GET",
-  });
+    }
+  );
 
   if (!response.ok) {
     throw new Error(await parseError(response));
