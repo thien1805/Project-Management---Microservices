@@ -29,6 +29,71 @@ type Toast = {
 
 type WorkspaceView = "projects" | "project-detail";
 
+type NotificationEventUI = {
+  label: string;
+  badgeClassName: string;
+  cardClassName: string;
+};
+
+const NOTIFICATION_EVENT_UI_MAP: Record<string, NotificationEventUI> = {
+  PROJECT_CREATED: {
+    label: "Project created",
+    badgeClassName: "bg-emerald-100 text-emerald-700 border border-emerald-200",
+    cardClassName: "border-emerald-200 bg-emerald-50/40",
+  },
+  PROJECT_DELETED: {
+    label: "Project deleted",
+    badgeClassName: "bg-rose-100 text-rose-700 border border-rose-200",
+    cardClassName: "border-rose-200 bg-rose-50/40",
+  },
+  PROJECT_MEMBER_ADDED: {
+    label: "Project member added",
+    badgeClassName: "bg-sky-100 text-sky-700 border border-sky-200",
+    cardClassName: "border-sky-200 bg-sky-50/40",
+  },
+  TASK_CREATED: {
+    label: "Task created",
+    badgeClassName: "bg-indigo-100 text-indigo-700 border border-indigo-200",
+    cardClassName: "border-indigo-200 bg-indigo-50/40",
+  },
+  TASK_UPDATED: {
+    label: "Task updated",
+    badgeClassName: "bg-amber-100 text-amber-700 border border-amber-200",
+    cardClassName: "border-amber-200 bg-amber-50/40",
+  },
+  TASK_STATUS_CHANGED: {
+    label: "Task status changed",
+    badgeClassName: "bg-violet-100 text-violet-700 border border-violet-200",
+    cardClassName: "border-violet-200 bg-violet-50/40",
+  },
+  TASK_DELETED: {
+    label: "Task deleted",
+    badgeClassName: "bg-red-100 text-red-700 border border-red-200",
+    cardClassName: "border-red-200 bg-red-50/40",
+  },
+};
+
+const toTitleCase = (value: string) =>
+  value
+    .toLowerCase()
+    .split(" ")
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+
+const resolveNotificationEventUI = (eventType: string): NotificationEventUI => {
+  const config = NOTIFICATION_EVENT_UI_MAP[eventType];
+  if (config) {
+    return config;
+  }
+
+  return {
+    label: toTitleCase(eventType.replaceAll("_", " ")),
+    badgeClassName: "bg-slate-100 text-slate-700 border border-slate-200",
+    cardClassName: "border-slate-200 bg-white",
+  };
+};
+
 export default function WorkspacePage() {
   const router = useRouter();
   const { user, isLoading, logout } = useAuth();
@@ -559,18 +624,24 @@ export default function WorkspacePage() {
             <div className="space-y-2 max-h-[28rem] overflow-auto">
               {loadingNotifications ? <p>Loading notifications...</p> : null}
               {!loadingNotifications && notifications.length === 0 ? <p>No notifications yet.</p> : null}
-              {notifications.map((item) => (
-                <div key={item.id} className="p-3 rounded-xl border border-slate-200">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-semibold">{item.title}</p>
-                      <p className="text-sm text-slate-600 mt-1">{item.message}</p>
+              {notifications.map((item) => {
+                const eventUI = resolveNotificationEventUI(item.event_type);
+
+                return (
+                  <div key={item.id} className={`p-3 rounded-xl border ${eventUI.cardClassName}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-slate-900">{item.title}</p>
+                        <p className="text-sm text-slate-600 mt-1">{item.message}</p>
+                      </div>
+                      <span className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${eventUI.badgeClassName}`}>
+                        {eventUI.label}
+                      </span>
                     </div>
-                    <span className="text-xs px-2 py-1 rounded-full bg-slate-100">{item.event_type}</span>
+                    <p className="text-xs text-slate-500 mt-2">{new Date(item.created_at).toLocaleString()}</p>
                   </div>
-                  <p className="text-xs text-slate-500 mt-2">{new Date(item.created_at).toLocaleString()}</p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         )}
