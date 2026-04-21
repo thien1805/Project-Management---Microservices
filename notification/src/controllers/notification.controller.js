@@ -1,8 +1,8 @@
 const notificationService = require('../services/notification.service');
 
-const createNotification = (req, res) => {
+const createNotification = async (req, res) => {
   try {
-    const record = notificationService.createNotification(req.body);
+    const record = await notificationService.createNotification(req.body);
     return res.status(201).json({
       success: true,
       message: 'Notification received',
@@ -16,14 +16,21 @@ const createNotification = (req, res) => {
   }
 };
 
-const listNotifications = (req, res) => {
-  const records = notificationService.listNotifications(req.query);
+const listNotifications = async (req, res) => {
+  try {
+    const records = await notificationService.listNotifications(req.query);
 
-  return res.status(200).json({
-    success: true,
-    message: 'Notifications retrieved successfully',
-    data: records,
-  });
+    return res.status(200).json({
+      success: true,
+      message: 'Notifications retrieved successfully',
+      data: records,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
 };
 
 module.exports = {
