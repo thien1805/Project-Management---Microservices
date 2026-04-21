@@ -4,16 +4,16 @@ services:
     container_name: ms_postgres_auth
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: auth_db
+      POSTGRES_USER: ${AUTH_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${AUTH_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${AUTH_POSTGRES_DB}
     ports:
-      - "5433:5432"
+      - "${AUTH_POSTGRES_HOST_PORT}:5432"
     volumes:
       - postgres_auth_data:/var/lib/postgresql/data
       - ./auth/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d auth_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${AUTH_POSTGRES_USER} -d ${AUTH_POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -23,16 +23,16 @@ services:
     container_name: ms_postgres_task
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: task_management
+      POSTGRES_USER: ${TASK_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${TASK_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${TASK_POSTGRES_DB}
     ports:
-      - "5432:5432"
+      - "${TASK_POSTGRES_HOST_PORT}:5432"
     volumes:
       - postgres_task_data:/var/lib/postgresql/data
       - ./project_and_task_management/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d task_management"]
+      test: ["CMD-SHELL", "pg_isready -U ${TASK_POSTGRES_USER} -d ${TASK_POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -42,16 +42,16 @@ services:
     container_name: ms_postgres_notification
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: notification_db
+      POSTGRES_USER: ${NOTIFICATION_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${NOTIFICATION_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${NOTIFICATION_POSTGRES_DB}
     ports:
-      - "5434:5432"
+      - "${NOTIFICATION_POSTGRES_HOST_PORT}:5432"
     volumes:
       - postgres_notification_data:/var/lib/postgresql/data
       - ./notification/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d notification_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${NOTIFICATION_POSTGRES_USER} -d ${NOTIFICATION_POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -63,18 +63,18 @@ services:
     container_name: ms_auth
     restart: unless-stopped
     environment:
-      PORT: 3001
-      DB_HOST: postgres-auth
-      DB_PORT: 5432
-      DB_NAME: auth_db
-      DB_PASSWORD: postgres
-      JWT_SECRET: super_secret_for_local_dev
-      JWT_EXPIRES: 1h
+      PORT: ${AUTH_SERVICE_PORT}
+      DB_HOST: ${AUTH_DB_HOST}
+      DB_PORT: ${AUTH_DB_PORT}
+      DB_NAME: ${AUTH_DB_NAME}
+      DB_PASSWORD: ${AUTH_DB_PASSWORD}
+      JWT_SECRET: ${AUTH_JWT_SECRET}
+      JWT_EXPIRES: ${AUTH_JWT_EXPIRES}
     depends_on:
       postgres-auth:
         condition: service_healthy
     ports:
-      - "3001:3001"
+      - "${AUTH_HOST_PORT}:${AUTH_SERVICE_PORT}"
 
   notification:
     build:
@@ -83,17 +83,17 @@ services:
     container_name: ms_notification
     restart: unless-stopped
     environment:
-      PORT: 3002
-      DB_HOST: postgres-notification
-      DB_PORT: 5432
-      DB_NAME: notification_db
-      DB_USER: postgres
-      DB_PASSWORD: postgres
+      PORT: ${NOTIFICATION_SERVICE_PORT}
+      DB_HOST: ${NOTIFICATION_DB_HOST}
+      DB_PORT: ${NOTIFICATION_DB_PORT}
+      DB_NAME: ${NOTIFICATION_DB_NAME}
+      DB_USER: ${NOTIFICATION_DB_USER}
+      DB_PASSWORD: ${NOTIFICATION_DB_PASSWORD}
     depends_on:
       postgres-notification:
         condition: service_healthy
     ports:
-      - "3002:3002"
+      - "${NOTIFICATION_HOST_PORT}:${NOTIFICATION_SERVICE_PORT}"
 
   project-and-task-management:
     build:
@@ -102,21 +102,21 @@ services:
     container_name: ms_project_task
     restart: unless-stopped
     environment:
-      PORT: 3000
-      DB_HOST: postgres-task
-      DB_PORT: 5432
-      DB_NAME: task_management
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      NOTIFICATION_ENABLED: "true"
-      NOTIFICATION_URL: http://notification:3002/api/notifications
+      PORT: ${PROJECT_SERVICE_PORT}
+      DB_HOST: ${PROJECT_DB_HOST}
+      DB_PORT: ${PROJECT_DB_PORT}
+      DB_NAME: ${PROJECT_DB_NAME}
+      DB_USER: ${PROJECT_DB_USER}
+      DB_PASSWORD: ${PROJECT_DB_PASSWORD}
+      NOTIFICATION_ENABLED: ${PROJECT_NOTIFICATION_ENABLED}
+      NOTIFICATION_URL: ${PROJECT_NOTIFICATION_URL}
     depends_on:
       postgres-task:
         condition: service_healthy
       notification:
         condition: service_started
     ports:
-      - "3010:3000"
+      - "${PROJECT_HOST_PORT}:${PROJECT_SERVICE_PORT}"
 
   frontend:
     build:
@@ -125,17 +125,17 @@ services:
     container_name: ms_frontend
     restart: unless-stopped
     environment:
-      NODE_ENV: production
-      NEXT_PUBLIC_AUTH_SERVICE_URL: http://localhost:3001
-      NEXT_PUBLIC_TASK_SERVICE_URL: http://localhost:3010
-      NEXT_PUBLIC_NOTIFICATION_SERVICE_URL: http://localhost:3002
+      NODE_ENV: ${FRONTEND_NODE_ENV}
+      NEXT_PUBLIC_AUTH_SERVICE_URL: ${FRONTEND_AUTH_SERVICE_URL}
+      NEXT_PUBLIC_TASK_SERVICE_URL: ${FRONTEND_TASK_SERVICE_URL}
+      NEXT_PUBLIC_NOTIFICATION_SERVICE_URL: ${FRONTEND_NOTIFICATION_SERVICE_URL}
     depends_on:
       auth:
         condition: service_started
       project-and-task-management:
         condition: service_started
     ports:
-      - "3003:3003"
+      - "${FRONTEND_HOST_PORT}:${FRONTEND_SERVICE_PORT}"
 
 volumes:
   postgres_auth_data:
