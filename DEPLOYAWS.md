@@ -144,10 +144,28 @@ Create one ALB and listener rules:
 - Default `/` -> frontend target group (port 3003)
 
 Add health checks:
-- Auth: custom endpoint recommendation `GET /health` (add if missing)
+- Auth: `GET /health`
 - Project/Task: `GET /health`
 - Notification: `GET /health`
-- Frontend: `/`
+- Frontend: `GET /health`
+
+Recommended Target Group health check settings (all 4 services):
+- Protocol: `HTTP`
+- Health check path: use each service path above
+- Matcher (Success codes): `200-399`
+- Health check interval: `30` seconds
+- Health check timeout: `5` seconds
+- Healthy threshold count: `2`
+- Unhealthy threshold count: `2`
+
+ECS service recommendation:
+- Health check grace period: `60-120` seconds (especially useful for frontend cold start)
+
+Quick per-target-group map:
+- `tg-auth` (port `3001`): path `/health`
+- `tg-project-task` (port `3000`): path `/health`
+- `tg-notification` (port `3002`): path `/health`
+- `tg-frontend` (port `3003`): path `/health`
 
 ## 8. CloudWatch Evidence (Required)
 

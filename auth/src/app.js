@@ -7,6 +7,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get('/health', (req, res) => {
+  return res.json({
+    success: true,
+    message: 'Auth service is running',
+  });
+});
+
 const authRoutes = require('./routes/auth.routes');
 
 app.use('/api/auth', authRoutes);

@@ -47,6 +47,7 @@ This repository currently contains:
 ## API Summary
 
 ### Auth Service (`http://localhost:3001`)
+- `GET /health`
 - `POST /api/auth/register`
 - `POST /api/auth/login`
 - `GET /api/auth/profile` (requires bearer token)
@@ -72,6 +73,10 @@ This repository currently contains:
 - `GET /health`
 - `POST /api/notifications`
 - `GET /api/notifications?recipient_id=<userId>&source_service=project_and_task_management&limit=50`
+
+### Frontend (`http://localhost:3003`)
+- `GET /health`
+- `GET /`
 
 Persistence details:
 - Table: `notification.notifications`
