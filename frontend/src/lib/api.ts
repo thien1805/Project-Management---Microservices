@@ -148,7 +148,7 @@ export const getProfile = async (token: string) => {
 export const getProjects = async (ownerId: number) => {
   const query = `?owner_id=${encodeURIComponent(String(ownerId))}`;
 
-  const response = await fetch(`${getTaskServiceUrl()}/api/projects${query}`, {
+  const response = await fetch(`${getTaskServiceUrl()}/api/projects/${query}`, {
     method: "GET",
   });
 
@@ -165,7 +165,7 @@ export const createProject = async (payload: {
   description?: string;
   owner_id: number;
 }) => {
-  const response = await fetch(`${getTaskServiceUrl()}/api/projects`, {
+  const response = await fetch(`${getTaskServiceUrl()}/api/projects/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -217,7 +217,7 @@ export const createTask = async (payload: {
   created_by: number;
   assignee_id?: number;
 }) => {
-  const response = await fetch(`${getTaskServiceUrl()}/api/tasks`, {
+  const response = await fetch(`${getTaskServiceUrl()}/api/tasks/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -281,7 +281,7 @@ export const getNotifications = async (params?: {
   }
 
   const query = queryParams.toString();
-  const url = `${getNotificationServiceUrl()}/api/notifications${query ? `?${query}` : ""}`;
+  const url = `${getNotificationServiceUrl()}/api/notifications/${query ? `?${query}` : ""}`;
 
   const response = await fetch(url, {
     method: "GET",
