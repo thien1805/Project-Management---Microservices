@@ -193,7 +193,6 @@ export default function WorkspacePage() {
     try {
       const data = await getNotifications({
         recipient_id: user.id,
-        source_service: "project_and_task_management",
         limit: 50,
       });
       setNotifications(data);
@@ -569,13 +568,42 @@ export default function WorkspacePage() {
                       {loadingTasks ? <p>Loading tasks...</p> : null}
                       {!loadingTasks && tasks.length === 0 ? <p>No tasks found in this project.</p> : null}
                       {tasks.map((task) => (
-                        <div key={task.id} className="p-3 rounded-xl border border-slate-200 bg-white">
+                        <div
+                          key={task.id}
+                          className={`p-3 rounded-xl border ${
+                            task.status === "done"
+                              ? "border-emerald-200 bg-emerald-50/40"
+                              : task.status === "in_progress"
+                                ? "border-amber-200 bg-amber-50/40"
+                                : "border-slate-200 bg-white"
+                          }`}
+                        >
                           <div className="flex justify-between gap-3">
                             <div>
-                              <p className="font-semibold">{task.title}</p>
-                              <p className="text-sm text-slate-600 mt-1">{task.description || "No description"}</p>
+                              <p
+                                className={`font-semibold ${
+                                  task.status === "done" ? "line-through text-slate-500" : "text-slate-900"
+                                }`}
+                              >
+                                {task.title}
+                              </p>
+                              <p
+                                className={`text-sm mt-1 ${
+                                  task.status === "done" ? "line-through text-slate-400" : "text-slate-600"
+                                }`}
+                              >
+                                {task.description || "No description"}
+                              </p>
                             </div>
-                            <span className="text-xs px-2 py-1 rounded-full bg-slate-100 h-fit">
+                            <span
+                              className={`text-xs px-2 py-1 rounded-full h-fit border ${
+                                task.status === "done"
+                                  ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                                  : task.status === "in_progress"
+                                    ? "bg-amber-100 text-amber-700 border-amber-200"
+                                    : "bg-sky-100 text-sky-700 border-sky-200"
+                              }`}
+                            >
                               {task.status === "done"
                                 ? "Done"
                                 : task.status === "in_progress"
