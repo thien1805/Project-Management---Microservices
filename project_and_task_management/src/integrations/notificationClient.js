@@ -1,6 +1,11 @@
 const NOTIFICATION_URL =
-  process.env.NOTIFICATION_URL || 'http://localhost:3002/api/notifications';
-const NOTIFICATION_ENABLED = process.env.NOTIFICATION_ENABLED !== 'false';
+  process.env.NOTIFICATION_URL ||
+  process.env.PROJECT_NOTIFICATION_URL ||
+  'http://localhost:3002/api/notifications';
+
+const rawNotificationEnabled =
+  process.env.NOTIFICATION_ENABLED ?? process.env.PROJECT_NOTIFICATION_ENABLED;
+const NOTIFICATION_ENABLED = String(rawNotificationEnabled ?? 'true').toLowerCase() !== 'false';
 
 const sendNotification = async (payload) => {
   if (!NOTIFICATION_ENABLED) {
