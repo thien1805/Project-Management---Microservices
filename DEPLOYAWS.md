@@ -69,10 +69,16 @@ Build and push (repeat for each service):
 ```bash
 aws ecr get-login-password --region <region> | docker login --username AWS --password-stdin <account_id>.dkr.ecr.<region>.amazonaws.com
 
-docker build -t pm-auth ./auth
+# If you build on Apple Silicon (M1/M2/M3), force amd64 for ECS x86_64 tasks.
+docker buildx build --platform linux/amd64 -t pm-auth ./auth --load
 docker tag pm-auth:latest <account_id>.dkr.ecr.<region>.amazonaws.com/pm-auth:latest
 docker push <account_id>.dkr.ecr.<region>.amazonaws.com/pm-auth:latest
 ```
+
+Important runtime architecture note:
+- If ECS task definition uses `CPU architecture = X86_64`, images must be built as `linux/amd64`.
+- If ECS task definition uses `CPU architecture = ARM64`, images must be built as `linux/arm64`.
+- Mismatch causes container startup failure with error: `exec /usr/local/bin/docker-entrypoint.sh: exec format error`.
 
 ## 5. Provision Databases On RDS
 

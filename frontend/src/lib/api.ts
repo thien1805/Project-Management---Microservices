@@ -7,8 +7,18 @@ const resolveServiceUrl = (
     return envUrl;
   }
 
-  if (typeof window !== "undefined" && window.location.port === "3003") {
-    return dockerHostDefault;
+  if (typeof window !== "undefined") {
+    const { hostname, origin, port } = window.location;
+    const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1";
+
+    // In deployed environments behind ALB, use same-origin requests.
+    if (!isLocalHost) {
+      return origin;
+    }
+
+    if (port === "3003") {
+      return dockerHostDefault;
+    }
   }
 
   return localDefault;
