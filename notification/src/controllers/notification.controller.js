@@ -9,6 +9,7 @@ const createNotification = async (req, res) => {
       data: record,
     });
   } catch (error) {
+    console.error('Error in createNotification:', error);
     return res.status(400).json({
       success: false,
       message: error.message,
@@ -26,6 +27,7 @@ const listNotifications = async (req, res) => {
       data: records,
     });
   } catch (error) {
+    console.error('Error in listNotifications:', error);
     return res.status(400).json({
       success: false,
       message: error.message,

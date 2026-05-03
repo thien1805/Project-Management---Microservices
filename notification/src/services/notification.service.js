@@ -100,8 +100,13 @@ const listNotifications = async (query) => {
     queryText += ` LIMIT $${values.length}`;
   }
 
-  const result = await pool.query(queryText, values);
-  return result.rows;
+  try {
+    const result = await pool.query(queryText, values);
+    return result.rows;
+  } catch (error) {
+    console.error('DB error listing notifications:', error);
+    throw error;
+  }
 };
 
 module.exports = {
