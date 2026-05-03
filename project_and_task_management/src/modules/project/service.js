@@ -46,7 +46,7 @@ const createProject = async (payload) => {
 
     await client.query('COMMIT');
 
-    await sendNotification({
+    const notificationPayload = {
       event_type: 'PROJECT_CREATED',
       title: `Project created: ${project.name}`,
       message: `Project \"${project.name}\" was created by user ${payload.owner_id}`,
@@ -58,7 +58,10 @@ const createProject = async (payload) => {
         owner_id: Number(payload.owner_id),
         status: project.status,
       },
-    });
+    };
+    console.log('[ProjectService] Triggering PROJECT_CREATED notification');
+    const notificationResult = await sendNotification(notificationPayload);
+    console.log('[ProjectService] Notification result:', notificationResult);
 
     return project;
   } catch (error) {
@@ -101,7 +104,7 @@ const deleteProject = async (id, payload = {}) => {
 
   const deletedProject = await projectRepository.deleteProject(id);
 
-  await sendNotification({
+  const notificationPayload = {
     event_type: 'PROJECT_DELETED',
     title: `Project deleted: ${project.name}`,
     message: `Project \"${project.name}\" was deleted`,
@@ -113,7 +116,10 @@ const deleteProject = async (id, payload = {}) => {
       actor_id: actorId,
       status: 'deleted',
     },
-  });
+  };
+  console.log('[ProjectService] Triggering PROJECT_DELETED notification');
+  const notificationResult = await sendNotification(notificationPayload);
+  console.log('[ProjectService] Notification result:', notificationResult);
 
   return deletedProject;
 };

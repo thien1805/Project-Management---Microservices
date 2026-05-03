@@ -83,7 +83,7 @@ const createTask = async (body) => {
     recipients.push(Number(task.assignee_id));
   }
 
-  await sendNotification({
+  const notificationPayload = {
     event_type: 'TASK_CREATED',
     title: `Task created: ${task.title}`,
     message: `Task \"${task.title}\" was created in project \"${project.name}\"`,
@@ -97,7 +97,10 @@ const createTask = async (body) => {
       status: task.status,
       priority: task.priority,
     },
-  });
+  };
+  console.log('[TaskService] Triggering TASK_CREATED notification');
+  const notificationResult = await sendNotification(notificationPayload);
+  console.log('[TaskService] Notification result:', notificationResult);
 
   return task;
 };
@@ -153,7 +156,7 @@ const updateTask = async (id, body) => {
     recipients.push(Number(updatedTask.assignee_id));
   }
 
-  await sendNotification({
+  const notificationPayload = {
     event_type: 'TASK_UPDATED',
     title: `Task updated: ${updatedTask.title}`,
     message: `Task \"${updatedTask.title}\" was updated in project \"${projectName}\"`,
@@ -167,7 +170,10 @@ const updateTask = async (id, body) => {
       old_status: oldTask.status,
       new_status: updatedTask.status,
     },
-  });
+  };
+  console.log('[TaskService] Triggering TASK_UPDATED notification');
+  const notificationResult = await sendNotification(notificationPayload);
+  console.log('[TaskService] Notification result:', notificationResult);
 
   return updatedTask;
 };
@@ -202,7 +208,7 @@ const updateTaskStatus = async (id, body) => {
     recipients.push(Number(oldTask.assignee_id));
   }
 
-  await sendNotification({
+  const notificationPayload = {
     event_type: 'TASK_STATUS_CHANGED',
     title: `Task status changed: ${updatedTask.title}`,
     message: `Task \"${updatedTask.title}\" in project \"${projectName}\" changed from ${oldTask.status} to ${updatedTask.status}`,
@@ -216,7 +222,10 @@ const updateTaskStatus = async (id, body) => {
       old_status: oldTask.status,
       new_status: updatedTask.status,
     },
-  });
+  };
+  console.log('[TaskService] Triggering TASK_STATUS_CHANGED notification');
+  const notificationResult = await sendNotification(notificationPayload);
+  console.log('[TaskService] Notification result:', notificationResult);
 
   return updatedTask;
 };
@@ -251,7 +260,7 @@ const deleteTask = async (id, payload = {}) => {
     recipients.push(Number(existingTask.assignee_id));
   }
 
-  await sendNotification({
+  const notificationPayload = {
     event_type: 'TASK_DELETED',
     title: `Task deleted: ${existingTask.title}`,
     message: `Task \"${existingTask.title}\" was deleted from project \"${projectName}\"`,
@@ -265,7 +274,10 @@ const deleteTask = async (id, payload = {}) => {
       actor_id: actorId,
       status: 'deleted',
     },
-  });
+  };
+  console.log('[TaskService] Triggering TASK_DELETED notification');
+  const notificationResult = await sendNotification(notificationPayload);
+  console.log('[TaskService] Notification result:', notificationResult);
 
   return deletedTask;
 };
